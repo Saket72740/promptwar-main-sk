@@ -41,12 +41,27 @@ async function sendChatMessage() {
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
+        // Fetch JWT token first using Basic Auth
+        const tokenResponse = await fetch('/api/token', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Basic YWRtaW46YWRtaW4=' // base64 for admin:admin
+            }
+        });
+
+        if (!tokenResponse.ok) {
+            throw new Error("Failed to authenticate with backend");
+        }
+
+        const tokenData = await tokenResponse.json();
+        const jwtToken = tokenData.token;
+
         // Fetch dynamic security elements if present
-        const response = await fetch('/chat', {
+        const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Inject CSRF header if required by Spring Security configuration
+                'Authorization': `Bearer ${jwtToken}`
             },
             body: JSON.stringify({ message: message })
         });

@@ -41,18 +41,18 @@ public class WellnessController {
             session.setAttribute("selectedExam", exam);
         }
 
-        List<JournalEntry> journals = journalRepository.findAllByOrderByCreatedAtDesc();
+        // Limit fetched history to the last 10 entries for dashboard efficiency
+        List<JournalEntry> journals = journalRepository.findTop10ByOrderByCreatedAtDesc();
         List<ChatMessage> chatMessages = chatMessageRepository.findAllByOrderByCreatedAtAsc();
 
-        // Calculate aggregate statistics for the dashboard
-        int averageStress = 0;
-        if (!journals.isEmpty()) {
-            int sum = journals.stream().mapToInt(JournalEntry::getStressLevel).sum();
-            averageStress = sum / journals.size();
-        }
+        // Calculate average stress directly in database for efficiency
+        Double averageStressVal = journalRepository.getAverageStressLevel();
+        int averageStress = averageStressVal != null ? averageStressVal.intValue() : 0;
+        long journalsCount = journalRepository.count();
 
         // Add model variables
         model.addAttribute("journals", journals);
+        model.addAttribute("journalsCount", journalsCount);
         model.addAttribute("chatMessages", chatMessages);
         model.addAttribute("averageStress", averageStress);
         model.addAttribute("selectedExam", exam);
@@ -66,18 +66,14 @@ public class WellnessController {
                                   @RequestParam String exam,
                                   @RequestParam String content,
                                   HttpSession session) {
-        // Validate inputs
         if (mood == null || mood.isBlank() || exam == null || exam.isBlank() || content == null || content.isBlank()) {
             throw new IllegalArgumentException("All entry fields (Mood, Exam, Content) are required.");
         }
 
-        // Save active exam selection in session
         session.setAttribute("selectedExam", exam);
 
-        // Analyze content
         JournalAnalysisResponse analysis = aiSimulatorService.analyzeJournal(content, exam, mood);
 
-        // Persist journal log
         JournalEntry entry = new JournalEntry(mood, exam, content);
         entry.setStressLevel(analysis.stressLevel());
         entry.setTriggers(String.join(", ", analysis.triggers()));
@@ -90,7 +86,7 @@ public class WellnessController {
         return "redirect:/";
     }
 
-    @PostMapping("/chat")
+    @PostMapping("/api/chat")
     @ResponseBody
     public ResponseEntity<Map<String, String>> sendMessage(@RequestBody Map<String, String> requestBody, HttpSession session) {
         String message = requestBody.get("message");
@@ -103,17 +99,14 @@ public class WellnessController {
             exam = "JEE";
         }
 
-        // Save User Message
         ChatMessage userMsg = new ChatMessage("user", message, exam);
         chatMessageRepository.save(userMsg);
 
-        // Fetch History
-        List<JournalEntry> journals = journalRepository.findAllByOrderByCreatedAtDesc();
+        // Fetch limited recent logs context (top 10 is fast and sufficient)
+        List<JournalEntry> journals = journalRepository.findTop10ByOrderByCreatedAtDesc();
 
-        // Generate AI Response
         String aiResponseText = aiSimulatorService.generateCompanionResponse(message, exam, journals);
 
-        // Save AI Message
         ChatMessage aiMsg = new ChatMessage("ai", aiResponseText, exam);
         chatMessageRepository.save(aiMsg);
 

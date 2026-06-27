@@ -6,6 +6,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import com.example.prompt_war_main.security.JwtService;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -17,6 +19,16 @@ public class WellnessControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtService jwtService;
+
+    private String validToken;
+
+    @BeforeEach
+    public void setup() {
+        validToken = "Bearer " + jwtService.generateToken("admin");
+    }
 
     @Test
     public void testGetDashboard_Default() throws Exception {
@@ -39,15 +51,28 @@ public class WellnessControllerTests {
     }
 
     @Test
+    public void testAddJournalEntry_ValidationFailure() throws Exception {
+        // Missing fields should throw IllegalArgumentException and route to error page via Exception Handler
+        mockMvc.perform(post("/journal")
+                        .param("mood", "")
+                        .param("exam", "JEE")
+                        .param("content", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error"))
+                .andExpect(model().attributeExists("errorMessage"));
+    }
+
+    @Test
     public void testSendMessage_Success() throws Exception {
-        // First log a journal to establish context (optional but good)
+        // First log a journal to establish context
         mockMvc.perform(post("/journal")
                         .param("mood", "fatigued")
                         .param("exam", "CAT")
                         .param("content", "I am very tired from reviewing quantitative aptitude for 12 hours straight."));
 
         // Test sending message
-        mockMvc.perform(post("/chat")
+        mockMvc.perform(post("/api/chat")
+                        .header("Authorization", validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"I feel exhausted today.\"}"))
                 .andExpect(status().isOk())
@@ -56,11 +81,31 @@ public class WellnessControllerTests {
     }
 
     @Test
+    public void testSendMessage_EmptyMessageValidationFailure() throws Exception {
+        // Empty message should return 400 Bad Request
+        mockMvc.perform(post("/api/chat")
+                        .header("Authorization", validToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Message cannot be empty"));
+    }
+
+    @Test
     public void testUpdateProfile_Success() throws Exception {
         mockMvc.perform(post("/profile")
                         .param("exam", "UPSC"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    public void testUpdateProfile_ValidationFailure() throws Exception {
+        mockMvc.perform(post("/profile")
+                        .param("exam", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error"))
+                .andExpect(model().attributeExists("errorMessage"));
     }
 
     @Test
