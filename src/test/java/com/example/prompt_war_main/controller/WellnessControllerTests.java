@@ -39,8 +39,20 @@ public class WellnessControllerTests {
     }
 
     @Test
+    public void testAddJournalEntry_ValidationFailure() throws Exception {
+        // Missing fields should throw IllegalArgumentException and route to error page via Exception Handler
+        mockMvc.perform(post("/journal")
+                        .param("mood", "")
+                        .param("exam", "JEE")
+                        .param("content", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error"))
+                .andExpect(model().attributeExists("errorMessage"));
+    }
+
+    @Test
     public void testSendMessage_Success() throws Exception {
-        // First log a journal to establish context (optional but good)
+        // First log a journal to establish context
         mockMvc.perform(post("/journal")
                         .param("mood", "fatigued")
                         .param("exam", "CAT")
@@ -56,11 +68,30 @@ public class WellnessControllerTests {
     }
 
     @Test
+    public void testSendMessage_EmptyMessageValidationFailure() throws Exception {
+        // Empty message should return 400 Bad Request
+        mockMvc.perform(post("/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Message cannot be empty"));
+    }
+
+    @Test
     public void testUpdateProfile_Success() throws Exception {
         mockMvc.perform(post("/profile")
                         .param("exam", "UPSC"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    public void testUpdateProfile_ValidationFailure() throws Exception {
+        mockMvc.perform(post("/profile")
+                        .param("exam", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error"))
+                .andExpect(model().attributeExists("errorMessage"));
     }
 
     @Test
