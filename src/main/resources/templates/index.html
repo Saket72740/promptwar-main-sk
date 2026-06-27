@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Wellness Tracker - Digital Companion</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #090e1a 0%, #0d1527 50%, #16223f 100%);
+            --glass-bg: rgba(13, 21, 39, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-glow: rgba(99, 102, 241, 0.12);
+            
+            --primary: #6366f1; /* Indigo */
+            --primary-glow: rgba(99, 102, 241, 0.35);
+            --secondary: #06b6d4; /* Cyan */
+            --success: #10b981; /* Emerald */
+            --warning: #f59e0b; /* Amber */
+            --danger: #f43f5e; /* Rose */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #64748b;
+            
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Base Resets */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(13, 21, 39, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-sm);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.45);
+        }
+
+        /* Glowing background blobs */
+        .glow-blob-1 {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 45vw;
+            height: 45vw;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+            filter: blur(80px);
+        }
+        .glow-blob-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 45vw;
+            height: 45vw;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+            filter: blur(80px);
+        }
+
+        /* Header Navigation */
+        header {
+            background: rgba(9, 14, 26, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header-logo i {
+            color: var(--secondary);
+            text-shadow: 0 0 12px var(--secondary);
+        }
+
+        .logo-prompt {
+            color: var(--text-main);
+        }
+
+        .logo-war {
+            color: var(--primary);
+        }
+
+        .header-badge {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+            padding: 0.35rem 0.85rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: var(--danger);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-clear:hover {
+            background: rgba(244, 63, 94, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Container Layout */
+        main {
+            max-width: 1400px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1.8fr;
+            gap: 2rem;
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphic Panel Cards */
+        .panel-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+        }
+
+        .panel-card:hover {
+            border-color: rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), 0 0 15px var(--glass-glow);
+        }
+
+        .panel-title {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .panel-title i {
+            color: var(--primary);
+        }
+
+        /* Profile & Journal Form */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .select-input, .text-input {
+            width: 100%;
+            background: rgba(9, 14, 26, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .select-input:focus, .text-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        /* Mood Selection Grid */
+        .mood-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .mood-btn {
+            background: rgba(9, 14, 26, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 0.25rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            transition: var(--transition);
+        }
+
+        .mood-btn span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .mood-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .mood-btn.active {
+            background: var(--primary-glow);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .mood-btn.active span {
+            color: var(--text-main);
+        }
+
+        .textarea-input {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary);
+            border: none;
+            color: var(--text-main);
+            padding: 0.85rem;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: #4f46e5;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value.stress-indicator {
+            color: var(--success);
+        }
+
+        .stat-value.stress-indicator.warn {
+            color: var(--warning);
+        }
+
+        .stat-value.stress-indicator.crit {
+            color: var(--danger);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* History Chart Container */
+        .chart-box {
+            background: rgba(9, 14, 26, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+            min-height: 180px;
+        }
+
+        .chart-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-dark);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* Analytics Panels */
+        .analytics-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .coping-card {
+            background: rgba(99, 102, 241, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .coping-card h3, .mindfulness-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .coping-card h3 i {
+            color: var(--secondary);
+        }
+
+        .mindfulness-card h3 i {
+            color: var(--success);
+        }
+
+        .strategy-text, .mindfulness-text {
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            white-space: pre-line;
+            line-height: 1.5;
+        }
+
+        /* Coping Text Markdown Formatting Helper */
+        .strategy-text h3 {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .strategy-text li {
+            margin-left: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Logs List */
+        .logs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .log-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .log-mood-badge {
+            font-size: 1.25rem;
+        }
+
+        .log-exam-tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .log-date {
+            font-size: 0.75rem;
+            color: var(--text-dark);
+        }
+
+        .log-stress-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 50px;
+        }
+
+        .log-stress-badge.low {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #34d399;
+        }
+
+        .log-stress-badge.med {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--warning);
+            color: #fbbf24;
+        }
+
+        .log-stress-badge.high {
+            background: rgba(244, 63, 94, 0.15);
+            border: 1px solid var(--danger);
+            color: #fb7185;
+        }
+
+        .log-body {
+            font-size: 0.875rem;
+            color: #e2e8f0;
+        }
+
+        .log-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .log-tag {
+            font-size: 0.75rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #c7d2fe;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .log-tag.distortion {
+            background: rgba(6, 182, 212, 0.08);
+            border-color: rgba(6, 182, 212, 0.2);
+            color: #c5f2f7;
+        }
+
+        /* Companion Chat Widget Layout (Right Side or Floating Sidebar) */
+        .chat-widget {
+            display: flex;
+            flex-direction: column;
+            height: 480px;
+            background: rgba(9, 14, 26, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: rgba(99, 102, 241, 0.08);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #a5b4fc;
+        }
+
+        .chat-header-status {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.75rem;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .chat-header-status::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chat-msg {
+            max-width: 80%;
+            padding: 0.65rem 0.85rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: var(--primary);
+            color: var(--text-main);
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-msg.ai {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: #cbd5e1;
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-input-area {
+            border-top: 1px solid var(--glass-border);
+            padding: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(9, 14, 26, 0.6);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            padding: 0.6rem 0.85rem;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-send {
+            background: var(--primary);
+            border: none;
+            color: var(--text-main);
+            padding: 0 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-send:hover {
+            background: #4f46e5;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-dark);
+            font-size: 0.75rem;
+            border-top: 1px solid var(--glass-border);
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-blob-1"></div>
+    <div class="glow-blob-2"></div>
+
+    <header>
+        <div class="header-logo">
+            <i class="fa-solid fa-brain"></i>
+            <span><span class="logo-prompt">Prompt</span><span class="logo-war">Wars</span></span>
+            <span class="header-badge">In-Person</span>
+        </div>
+        <div class="header-actions">
+            <form th:action="@{/clear}" method="post">
+                <button type="submit" class="btn-clear"><i class="fa-solid fa-trash-can"></i> Clear History</button>
+            </form>
+        </div>
+    </header>
+
+    <main>
+        <!-- LEFT PANEL: Entry Form & Profiles -->
+        <section class="panel-card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="panel-title" style="margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-sliders"></i>
+                <h2>Exam & Stress Profile</h2>
+            </div>
+            
+            <form th:action="@{/profile}" method="post" id="profileForm">
+                <div class="form-group">
+                    <label class="form-label" for="examSelect">Target Competitive Entrance Test</label>
+                    <select class="select-input" name="exam" id="examSelect" onchange="document.getElementById('profileForm').submit()">
+                        <option value="JEE" th:selected="${selectedExam == 'JEE'}">JEE (Joint Entrance Exam - Engineering)</option>
+                        <option value="NEET" th:selected="${selectedExam == 'NEET'}">NEET (National Eligibility Entrance Test - Medical)</option>
+                        <option value="UPSC" th:selected="${selectedExam == 'UPSC'}">UPSC (Civil Services Examination - IAS)</option>
+                        <option value="CAT" th:selected="${selectedExam == 'CAT'}">CAT (Common Admission Test - Management)</option>
+                        <option value="GATE" th:selected="${selectedExam == 'GATE'}">GATE (Graduate Aptitude Test in Engineering)</option>
+                        <option value="CUET" th:selected="${selectedExam == 'CUET'}">CUET (Common University Entrance Test)</option>
+                    </select>
+                </div>
+            </form>
+
+            <div class="panel-title" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-pen-fancy"></i>
+                <h2>Mood Log & Daily Journal</h2>
+            </div>
+
+            <form th:action="@{/journal}" method="post" id="journalForm">
+                <input type="hidden" name="exam" th:value="${selectedExam}">
+                <input type="hidden" name="mood" id="selectedMoodInput" value="happy">
+
+                <div class="form-group">
+                    <label class="form-label">How are you feeling right now?</label>
+                    <div class="mood-grid">
+                        <button type="button" class="mood-btn active" data-mood="happy" onclick="setMood(this)">
+                            <span>😊</span>
+                            <span>Happy/Calm</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="anxious" onclick="setMood(this)">
+                            <span>😰</span>
+                            <span>Anxious</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="fatigued" onclick="setMood(this)">
+                            <span>😫</span>
+                            <span>Fatigued</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="stressed" onclick="setMood(this)">
+                            <span>🤯</span>
+                            <span>Stressed</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="hopeless" onclick="setMood(this)">
+                            <span>😞</span>
+                            <span>Down</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="journalContent">Write freely about your day, study backlogs, parents' expectations, or test scores...</label>
+                    <textarea class="select-input text-input textarea-input" name="content" id="journalContent" placeholder="Today was tough because of the physics mockup, and I feel behind schedule..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-microchip"></i> Analyze Journal with GenAI
+                </button>
+            </form>
+
+            <!-- Companion Chat Panel integrated in the left column -->
+            <div class="panel-title" style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-comments"></i>
+                <h2>Empathetic AI Companion</h2>
+            </div>
+            
+            <div class="chat-widget">
+                <div class="chat-header">
+                    <div class="chat-header-title">
+                        <i class="fa-solid fa-circle-nodes"></i>
+                        <span>Companion Widget (<span th:text="${selectedExam}">JEE</span>)</span>
+                    </div>
+                    <div class="chat-header-status">Empathetic Digital Companion</div>
+                </div>
+                <div class="chat-messages" id="chatContainer">
+                    <div class="chat-msg ai">
+                        Hi! I am your always-available wellness companion. Share whatever is on your mind—exam fear, syllabus backlogs, or study exhaustion. I'm here to listen.
+                    </div>
+                    <!-- Render dynamic chat messages -->
+                    <div th:each="msg : ${chatMessages}" th:class="'chat-msg ' + ${msg.sender}" th:text="${msg.content}">
+                        Sample Message
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chatMsgInput" placeholder="Talk with your digital companion..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+                    <button class="btn-send" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Analytics Dashboard & Past entries -->
+        <section style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- Statistics Header Cards -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <h2>Wellness Analytics Dashboard</h2>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" th:text="${selectedExam}">JEE</div>
+                        <div class="stat-label">Active Target Exam</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" th:text="${journals.size()}">0</div>
+                        <div class="stat-label">Total Logs Analyzed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div th:class="'stat-value stress-indicator ' + (${averageStress} &gt; 70 ? 'crit' : (${averageStress} &gt; 40 ? 'warn' : ''))" 
+                             th:text="${averageStress} + '%'">0%</div>
+                        <div class="stat-label">Average Stress Level</div>
+                    </div>
+                </div>
+
+                <!-- SVG Stress Line Chart -->
+                <div class="chart-box">
+                    <div th:if="${journals.isEmpty()}" class="chart-placeholder">
+                        <i class="fa-solid fa-wave-square" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
+                        No tracking metrics found. Log your first journal entry to draw the stress-level graph.
+                    </div>
+                    <svg th:if="${!journals.isEmpty()}" id="stressChartSvg" style="width: 100%; height: 180px; overflow: visible;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Chart definitions and shapes will be dynamically rendered by javascript -->
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Dynamic Personal Coping Plan Card -->
+            <div class="panel-card coping-card" th:if="${!journals.isEmpty()}">
+                <div class="analytics-layout">
+                    <div>
+                        <h3><i class="fa-solid fa-shield-heart"></i> Personalized Coping Strategy</h3>
+                        <div class="strategy-text" th:text="${journals.get(0).personalizedCopingStrategy}">
+                            No recommendation generated yet.
+                        </div>
+                    </div>
+                    <div>
+                        <h3><i class="fa-solid fa-spa"></i> Adaptive Mindfulness Practice</h3>
+                        <div class="mindfulness-text" th:text="${journals.get(0).mindfulnessExercise}">
+                            No exercise recommended yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Past Logs History -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <h2>Historical Mood Logs & Analysis</h2>
+                </div>
+
+                <div th:if="${journals.isEmpty()}" style="text-align: center; padding: 3rem 1rem; color: var(--text-dark);">
+                    <i class="fa-regular fa-folder-open" style="font-size: 3rem; margin-bottom: 0.75rem; display: block;"></i>
+                    Your historical mental health logging is empty.
+                </div>
+
+                <div class="logs-list">
+                    <!-- Iterating journal lists -->
+                    <div class="log-item" th:each="log : ${journals}">
+                        <div class="log-header">
+                            <div class="log-meta">
+                                <span class="log-mood-badge" th:text="${log.mood == 'happy' ? '😊' : (log.mood == 'anxious' ? '😰' : (log.mood == 'fatigued' ? '😫' : (log.mood == 'stressed' ? '🤯' : '😞')))}">😊</span>
+                                <span class="log-exam-tag" th:text="${log.exam}">JEE</span>
+                                <span class="log-date" th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
+                            </div>
+                            <span th:class="'log-stress-badge ' + (${log.stressLevel} &gt; 70 ? 'high' : (${log.stressLevel} &gt; 40 ? 'med' : 'low'))" 
+                                  th:text="'Stress: ' + ${log.stressLevel} + '%'">Stress: 35%</span>
+                        </div>
+                        <div class="log-body" th:text="${log.content}">
+                            Journal entry contents go here...
+                        </div>
+                        <div class="log-tags">
+                            <span class="log-tag" th:each="tag : ${#strings.arraySplit(log.triggers, ',')}">
+                                <i class="fa-solid fa-triangle-exclamation"></i> <span th:text="${tag.trim()}">Trigger</span>
+                            </span>
+                            <span class="log-tag distortion" th:each="dist : ${#strings.arraySplit(log.cognitivePatterns, ',')}">
+                                <i class="fa-solid fa-shuffle"></i> <span th:text="${dist.trim()}">Distortion</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 PromptWars Challenge - Digital Wellness Companion for Competitive Entrance Aspirants.</p>
+    </footer>
+
+    <!-- Chart and Chat JavaScript logic -->
+    <script th:inline="javascript">
+        // Set Mood Selection in Hidden Input
+        function setMood(element) {
+            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('selectedMoodInput').value = element.getAttribute('data-mood');
+        }
+
+        // Scroll chat to bottom on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const chatBox = document.getElementById('chatContainer');
+            if (chatBox) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+            renderStressGraph();
+        });
+
+        // Chat AJAX messaging functionality
+        async function sendChatMessage() {
+            const input = document.getElementById('chatMsgInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Clear Input field
+            input.value = '';
+
+            // Add user message to UI
+            const chatBox = document.getElementById('chatContainer');
+            const userMsgEl = document.createElement('div');
+            userMsgEl.className = 'chat-msg user';
+            userMsgEl.textContent = message;
+            chatBox.appendChild(userMsgEl);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Add typing indicator
+            const typingEl = document.createElement('div');
+            typingEl.className = 'chat-msg ai typing';
+            typingEl.innerHTML = '<i class="fa-solid fa-ellipsis fa-bounce"></i> Thinking...';
+            chatBox.appendChild(typingEl);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                // Fetch dynamic security elements if present
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Inject CSRF header if required by Spring Security configuration
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Chat companion error response");
+                }
+
+                const result = await response.json();
+                
+                // Remove typing indicator
+                typingEl.remove();
+
+                // Add AI response to UI
+                const aiMsgEl = document.createElement('div');
+                aiMsgEl.className = 'chat-msg ai';
+                aiMsgEl.textContent = result.ai;
+                chatBox.appendChild(aiMsgEl);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+            } catch (err) {
+                console.error("Chat failure: ", err);
+                typingEl.remove();
+                
+                const errEl = document.createElement('div');
+                errEl.className = 'chat-msg ai';
+                errEl.style.borderColor = 'var(--danger)';
+                errEl.textContent = "Apologies, I encountered a connection drop. I am still here to support you.";
+                chatBox.appendChild(errEl);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        // Render dynamic SVG stress graph
+        function renderStressGraph() {
+            /*[Thymeleaf serialisation of journals list]*/
+            const journals = /*[[${journals}]]*/ [];
+            const svg = document.getElementById('stressChartSvg');
+            if (!svg || !journals || journals.length === 0) return;
+
+            // Reverse list to show chronological left-to-right progression
+            const chartData = [...journals].reverse();
+            
+            const width = svg.clientWidth || 500;
+            const height = 180;
+            const padding = 25;
+            
+            const chartWidth = width - (padding * 2);
+            const chartHeight = height - (padding * 2);
+            
+            svg.innerHTML = ''; // Clear SVG
+
+            // Helper scales
+            const getX = (index) => {
+                if (chartData.length <= 1) return padding + (chartWidth / 2);
+                return padding + (index * (chartWidth / (chartData.length - 1)));
+            };
+
+            const getY = (val) => {
+                // Stress level mapped 0% - 100%
+                return height - padding - (val * (chartHeight / 100));
+            };
+
+            // 1. Draw grid background lines
+            const gridLines = [0, 25, 50, 75, 100];
+            gridLines.forEach(lvl => {
+                const lineY = getY(lvl);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', padding);
+                line.setAttribute('y1', lineY);
+                line.setAttribute('x2', width - padding);
+                line.setAttribute('y2', lineY);
+                line.setAttribute('stroke', 'rgba(255, 255, 255, 0.05)');
+                line.setAttribute('stroke-dasharray', '4,4');
+                svg.appendChild(line);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', padding - 5);
+                text.setAttribute('y', lineY + 3);
+                text.setAttribute('text-anchor', 'end');
+                text.setAttribute('fill', 'var(--text-dark)');
+                text.setAttribute('font-size', '9px');
+                text.textContent = lvl + '%';
+                svg.appendChild(text);
+            });
+
+            // 2. Build line points path
+            let pathString = '';
+            let areaString = `M ${getX(0)} ${getY(0)}`;
+
+            chartData.forEach((d, idx) => {
+                const x = getX(idx);
+                const y = getY(d.stressLevel);
+                if (idx === 0) {
+                    pathString += `M ${x} ${y}`;
+                    areaString = `M ${x} ${height - padding} L ${x} ${y}`;
+                } else {
+                    pathString += ` L ${x} ${y}`;
+                    areaString += ` L ${x} ${y}`;
+                }
+            });
+            areaString += ` L ${getX(chartData.length - 1)} ${height - padding} Z`;
+
+            // 3. Draw linear gradient for area fill
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'chartGrad');
+            gradient.setAttribute('x1', '0');
+            gradient.setAttribute('y1', '0');
+            gradient.setAttribute('x2', '0');
+            gradient.setAttribute('y2', '1');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', 'rgba(99, 102, 241, 0.25)');
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', 'rgba(99, 102, 241, 0.0)');
+            
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            defs.appendChild(gradient);
+            svg.appendChild(defs);
+
+            // 4. Draw area path
+            if (chartData.length > 0) {
+                const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                areaPath.setAttribute('d', areaString);
+                areaPath.setAttribute('fill', 'url(#chartGrad)');
+                svg.appendChild(areaPath);
+            }
+
+            // 5. Draw line path
+            if (chartData.length > 0) {
+                const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                linePath.setAttribute('d', pathString);
+                linePath.setAttribute('fill', 'none');
+                linePath.setAttribute('stroke', 'var(--primary)');
+                linePath.setAttribute('stroke-width', '3.5');
+                linePath.setAttribute('stroke-linecap', 'round');
+                linePath.setAttribute('stroke-linejoin', 'round');
+                svg.appendChild(linePath);
+            }
+
+            // 6. Draw dots and values
+            chartData.forEach((d, idx) => {
+                const x = getX(idx);
+                const y = getY(d.stressLevel);
+                
+                // Outer glow dot
+                const glowCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                glowCircle.setAttribute('cx', x);
+                glowCircle.setAttribute('cy', y);
+                glowCircle.setAttribute('r', '7.5');
+                glowCircle.setAttribute('fill', 'rgba(99, 102, 241, 0.3)');
+                svg.appendChild(glowCircle);
+
+                // Inner core dot
+                const coreCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                coreCircle.setAttribute('cx', x);
+                coreCircle.setAttribute('cy', y);
+                coreCircle.setAttribute('r', '4');
+                coreCircle.setAttribute('fill', '#fff');
+                svg.appendChild(coreCircle);
+
+                // Value text label
+                const valText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                valText.setAttribute('x', x);
+                valText.setAttribute('y', y - 10);
+                valText.setAttribute('text-anchor', 'middle');
+                valText.setAttribute('fill', '#fff');
+                valText.setAttribute('font-size', '10px');
+                valText.setAttribute('font-weight', '700');
+                valText.textContent = d.stressLevel + '%';
+                svg.appendChild(valText);
+            });
+        }
+    </script>
+</body>
+</html>
