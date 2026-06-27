@@ -16,7 +16,7 @@ public class AISimulatorServiceTests {
     @Test
     public void testAnalyzeJournal_HighStress() {
         String journalText = "Today was awful. I failed my chemistry mock test and parents have high expectations. I should study 16 hours. I feel overwhelmed and anxious.";
-        JournalAnalysisResponse response = aiSimulatorService.analyzeJournal(journalText, "JEE");
+        JournalAnalysisResponse response = aiSimulatorService.analyzeJournal(journalText, "JEE", "anxious");
 
         assertThat(response.stressLevel()).isGreaterThan(60);
         assertThat(response.triggers()).contains("Mock Test Performance", "External & Peer Pressure");
@@ -28,7 +28,7 @@ public class AISimulatorServiceTests {
     @Test
     public void testAnalyzeJournal_LowStress() {
         String journalText = "A normal day. Solved physics problems.";
-        JournalAnalysisResponse response = aiSimulatorService.analyzeJournal(journalText, "JEE");
+        JournalAnalysisResponse response = aiSimulatorService.analyzeJournal(journalText, "JEE", "happy");
 
         assertThat(response.stressLevel()).isLessThan(50);
         assertThat(response.triggers()).contains("General Academic Anxiety");
