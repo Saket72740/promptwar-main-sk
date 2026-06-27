@@ -75,7 +75,7 @@ public class WellnessController {
         session.setAttribute("selectedExam", exam);
 
         // Analyze content
-        JournalAnalysisResponse analysis = aiSimulatorService.analyzeJournal(content, exam);
+        JournalAnalysisResponse analysis = aiSimulatorService.analyzeJournal(content, exam, mood);
 
         // Persist journal log
         JournalEntry entry = new JournalEntry(mood, exam, content);

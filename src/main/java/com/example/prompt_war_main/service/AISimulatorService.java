@@ -5,12 +5,33 @@ import com.example.prompt_war_main.model.JournalEntry;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class AISimulatorService {
 
-    public JournalAnalysisResponse analyzeJournal(String content, String exam) {
+    private static final Map<String, String[]> TRIGGER_KEYWORDS;
+    static {
+        Map<String, String[]> map = new LinkedHashMap<>();
+        map.put("Mock Test Performance", new String[]{"mock", "test", "score", "marks", "rank"});
+        map.put("Syllabus & Time Backlogs", new String[]{"backlog", "time", "syllabus", "schedule", "hours", "revision"});
+        map.put("External & Peer Pressure", new String[]{"parent", "mother", "father", "expect", "compare", "peer", "friend"});
+        map.put("Burnout & Fatigue", new String[]{"tired", "sleep", "exhaust", "heavy", "drain"});
+        map.put("Future & Career Uncertainty", new String[]{"fail", "career", "future", "drop", "give up", "quit"});
+        TRIGGER_KEYWORDS = Collections.unmodifiableMap(map);
+    }
+
+    private static final Map<String, String[]> DISTORTION_KEYWORDS;
+    static {
+        Map<String, String[]> map = new LinkedHashMap<>();
+        map.put("Catastrophizing (Expecting the worst outcome)", new String[]{"never", "ruin", "over", "worst", "disaster"});
+        map.put("All-or-Nothing Thinking (Splitting logic)", new String[]{"perfect", "nothing", "useless", "either", "zero"});
+        map.put("Should Statements (Unrealistic self-demands)", new String[]{"should", "must", "ought", "have to"});
+        DISTORTION_KEYWORDS = Collections.unmodifiableMap(map);
+    }
+
+    private static final String[] HIGH_STRESS_KEYWORDS = {"depressed", "anxious", "scared", "crying", "suffocating", "hate", "hopeless", "panic"};
+
+    public JournalAnalysisResponse analyzeJournal(String content, String exam, String mood) {
         if (content == null || content.isBlank()) {
             return new JournalAnalysisResponse(
                 10,
@@ -23,68 +44,59 @@ public class AISimulatorService {
 
         String lowerContent = content.toLowerCase();
         
-        // 1. Detect Triggers
-        List<String> triggers = new ArrayList<>();
-        if (lowerContent.contains("mock") || lowerContent.contains("test") || lowerContent.contains("score") || lowerContent.contains("marks") || lowerContent.contains("rank")) {
-            triggers.add("Mock Test Performance");
-        }
-        if (lowerContent.contains("backlog") || lowerContent.contains("time") || lowerContent.contains("syllabus") || lowerContent.contains("schedule") || lowerContent.contains("hours") || lowerContent.contains("revision")) {
-            triggers.add("Syllabus & Time Backlogs");
-        }
-        if (lowerContent.contains("parent") || lowerContent.contains("mother") || lowerContent.contains("father") || lowerContent.contains("expect") || lowerContent.contains("compare") || lowerContent.contains("peer") || lowerContent.contains("friend")) {
-            triggers.add("External & Peer Pressure");
-        }
-        if (lowerContent.contains("tired") || lowerContent.contains("sleep") || lowerContent.contains("exhaust") || lowerContent.contains("heavy") || lowerContent.contains("drain")) {
-            triggers.add("Burnout & Fatigue");
-        }
-        if (lowerContent.contains("fail") || lowerContent.contains("career") || lowerContent.contains("future") || lowerContent.contains("drop") || lowerContent.contains("give up") || lowerContent.contains("quit")) {
-            triggers.add("Future & Career Uncertainty");
-        }
-        if (triggers.isEmpty()) {
-            triggers.add("General Academic Anxiety");
-        }
-
-        // 2. Detect Cognitive Distortions
-        List<String> distortions = new ArrayList<>();
-        if (lowerContent.contains("never") || lowerContent.contains("ruin") || lowerContent.contains("over") || lowerContent.contains("worst") || lowerContent.contains("disaster")) {
-            distortions.add("Catastrophizing (Expecting the worst outcome)");
-        }
-        if (lowerContent.contains("perfect") || lowerContent.contains("nothing") || lowerContent.contains("useless") || lowerContent.contains("either") || lowerContent.contains("zero")) {
-            distortions.add("All-or-Nothing Thinking (Splitting logic)");
-        }
-        if (lowerContent.contains("should") || lowerContent.contains("must") || lowerContent.contains("ought") || lowerContent.contains("have to")) {
-            distortions.add("Should Statements (Unrealistic self-demands)");
-        }
-        if (distortions.isEmpty()) {
-            distortions.add("None detected (Healthy perspective)");
-        }
-
-        // 3. Calculate Stress Score
-        int baseStress = 25;
-        // Increase based on triggers detected
-        baseStress += triggers.size() * 12;
-        // Increase based on distortions
-        if (!distortions.get(0).startsWith("None")) {
-            baseStress += distortions.size() * 10;
-        }
-        // Increase based on specific negative keywords
-        String[] highStressKeywords = {"depressed", "anxious", "scared", "crying", "suffocating", "hate", "hopeless", "panic"};
-        for (String kw : highStressKeywords) {
-            if (lowerContent.contains(kw)) {
-                baseStress += 8;
-            }
-        }
-        // Caps
-        int stressLevel = Math.min(100, Math.max(10, baseStress));
-
-        // 4. Generate Coping Strategy
+        List<String> triggers = detectKeywords(lowerContent, TRIGGER_KEYWORDS, "General Academic Anxiety");
+        List<String> distortions = detectKeywords(lowerContent, DISTORTION_KEYWORDS, "None detected (Healthy perspective)");
+        int stressLevel = calculateStressScore(lowerContent, mood, triggers.size(), distortions.size(), distortions.get(0).startsWith("None"));
         String copingStrategy = generateCopingStrategy(triggers, exam, stressLevel);
-
-        // 5. Generate Mindfulness Exercise
         String mindfulnessExercise = generateMindfulnessExercise(stressLevel, triggers);
 
         return new JournalAnalysisResponse(stressLevel, triggers, distortions, copingStrategy, mindfulnessExercise);
     }
+
+    private List<String> detectKeywords(String content, Map<String, String[]> keywordMap, String defaultItem) {
+        List<String> detected = new ArrayList<>();
+        for (Map.Entry<String, String[]> entry : keywordMap.entrySet()) {
+            for (String kw : entry.getValue()) {
+                if (content.contains(kw)) {
+                    detected.add(entry.getKey());
+                    break; // Once a category is matched, move to next category
+                }
+            }
+        }
+        if (detected.isEmpty()) {
+            detected.add(defaultItem);
+        }
+        return detected;
+    }
+
+    private int calculateStressScore(String content, String mood, int triggerCount, int distortionCount, boolean noDistortions) {
+        int baseStress = 25;
+        if (mood != null) {
+            switch (mood.toLowerCase()) {
+                case "happy": baseStress = 10; break;
+                case "anxious": baseStress = 60; break;
+                case "fatigued": baseStress = 50; break;
+                case "stressed": baseStress = 80; break;
+                case "hopeless": baseStress = 90; break;
+                default: baseStress = 25; break;
+            }
+        }
+
+        baseStress += triggerCount * 12;
+
+        if (!noDistortions) {
+            baseStress += distortionCount * 10;
+        }
+
+        for (String kw : HIGH_STRESS_KEYWORDS) {
+            if (content.contains(kw)) {
+                baseStress += 8;
+            }
+        }
+
+        return Math.min(100, Math.max(10, baseStress));
+    }
+
 
     private String generateCopingStrategy(List<String> triggers, String exam, int stressLevel) {
         StringBuilder strategy = new StringBuilder();
